@@ -158,6 +158,11 @@ def signout():
     return redirect(url_for('signin'))
 
 
+@app.route('/health.html')
+def health():
+    return "Healthy :-)"
+
+
 @app.route('/signup/', methods=['GET', 'POST'])
 def signup():
     form = SignupForm()
