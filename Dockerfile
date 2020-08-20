@@ -1,13 +1,19 @@
 FROM python:3.8.4-buster
 
-LABEL maintainer="sebastian.m.szuber@gsk.com"
+LABEL maintainer="sebastian.szuber@outlook.com"
 
-WORKDIR /alnmccp
+RUN apt-get update -y \
+    && apt-get install -y \
+    gunicorn
 
-COPY requirements.txt ./
+COPY . /flaskapp
+WORKDIR /flaskapp
+RUN /usr/local/bin/python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-ADD update_assignments.py veeva_vault_api.py /alnmccp/
-
 # Run the command on container startup
-CMD python ./update_assignments.py scheduler
+CMD export FLASK_APP=notejam && \
+    export FLASK_ENV=development && \
+    flask run --host 0.0.0.0 --port=80
+
+EXPOSE 80
