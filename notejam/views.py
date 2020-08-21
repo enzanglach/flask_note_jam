@@ -1,5 +1,6 @@
 from datetime import date
 from hashlib import md5
+from platform import node
 
 from flask import render_template, flash, request, redirect, url_for, abort
 from flask_login import login_user, login_required, logout_user, current_user
@@ -160,7 +161,7 @@ def signout():
 
 @app.route('/health.html')
 def health():
-    return "Healthy :-)"
+    return f"Healthy :-) from {node()}"
 
 
 @app.route('/signup/', methods=['GET', 'POST'])
@@ -248,7 +249,7 @@ def _get_user_object_or_404(model, object_id, user, code=404):
 
 
 def _get_order_by(param='-updated_at'):
-    ''' get model order param by string description '''
+    """ get model order param by string description """
     return {
         'name': Note.name.asc(),
         '-name': Note.name.desc(),
@@ -258,7 +259,7 @@ def _get_order_by(param='-updated_at'):
 
 
 def _generate_password(user):
-    ''' generate new user password '''
+    """ generate new user password """
     m = md5.new()
     m.update(
         "{email}{secret}{date}".format(
