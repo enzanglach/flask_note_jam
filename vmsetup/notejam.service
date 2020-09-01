@@ -6,7 +6,8 @@ After=network.target
 User=njuser
 Group=njuser
 WorkingDirectory=/home/njuser/flask_note_jam
-Environment="PATH=/home/njuser/flask_note_jam/venv/bin"
+Environment="PATH=/home/njuser/flask_note_jam/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/mssql-tools/bin"
+Environment="SQLALCHEMY_DATABASE_URI=mssql+pyodbc://notejam_login:934ff064957eE@sqlserver01pyapp"
 ExecStart=/home/njuser/flask_note_jam/venv/bin/gunicorn --workers 3 --bind unix:notejam.sock -m 007 wsgi:app
 
 [Install]
