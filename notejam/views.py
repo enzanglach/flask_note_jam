@@ -1,14 +1,14 @@
+import socket
 from datetime import date
 from hashlib import md5
-from platform import node
 
 from flask import render_template, flash, request, redirect, url_for, abort
 from flask_login import login_user, login_required, logout_user, current_user
 from flask_mail import Message
 
 from notejam import app, db, login_manager, mail
-from notejam.models import User, Note, Pad
 from notejam.forms import SigninForm, SignupForm, NoteForm, PadForm, DeleteForm, ChangePasswordForm, ForgotPasswordForm
+from notejam.models import User, Note, Pad
 
 
 @login_manager.user_loader
@@ -159,9 +159,22 @@ def signout():
     return redirect(url_for('signin'))
 
 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+
 @app.route('/health.html')
 def health():
-    return f"Healthy :-) from {node()}, version 3"
+    return f"Healthy :-) from {get_ip()}, version 3"
 
 
 @app.route('/signup/', methods=['GET', 'POST'])
