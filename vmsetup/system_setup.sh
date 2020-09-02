@@ -1,7 +1,8 @@
 #!/bin/bash
 
 apt-get update -y
-apt-get install -y curl gnupg git apache2 libapache2-mod-wsgi python3-dev python3-pip
+apt-get upgrade -y
+apt-get install -y curl gnupg git python3-dev python3-pip build-essential libssl-dev libffi-dev python3-setuptools python3-venv nginx
 curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
 curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list
 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EB3E94ADBE1229CF
@@ -26,15 +27,4 @@ echo 'njuser       ALL=(ALL:ALL) ALL' >> /etc/sudoers
 echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> /home/njuser/.bash_profile
 echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> /home/njuser/.bashrc
 cd /home/azureuser
-GITHUB_PAT=`cat github_personal_access_token`
-echo "export GITHUB_PAT=$GITHUB_PAT" >> /home/njuser/.bash_profile
-echo "export GITHUB_PAT=$GITHUB_PAT" >> /home/njuser/.bashrc
-SQLALCHEMY_DATABASE_URI=`cat sqlalchemy_database_uri`
-echo "export SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" >> /home/njuser/.bash_profile
-echo "export SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" >> /home/njuser/.bashrc
-echo 'export FLASK_APP=notejam' >> /home/njuser/.bash_profile
-echo 'export FLASK_APP=notejam' >> /home/njuser/.bashrc
-echo 'export FLASK_ENV=production' >> /home/njuser/.bash_profile
-echo 'export FLASK_ENV=production' >> /home/njuser/.bashrc
 chown njuser:njuser /home/njuser/.bash_profile
-a2enmod wsgi
