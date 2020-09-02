@@ -22,6 +22,7 @@ Database = notejamdb01
 # for the Microsoft ODBC driver on Linux or macOS
 #
 EOF
+# TODO - no interactive questions on user
 adduser njuser --home /home/njuser --shell /bin/bash --disabled-password
 echo 'njuser       ALL=(ALL:ALL) ALL' >> /etc/sudoers
 echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> /home/njuser/.bash_profile
