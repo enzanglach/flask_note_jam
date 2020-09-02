@@ -161,7 +161,7 @@ def signout():
 
 @app.route('/health.html')
 def health():
-    return f"Healthy :-) from {node()}, version 1"
+    return f"Healthy :-) from {node()}, version 2"
 
 
 @app.route('/signup/', methods=['GET', 'POST'])
