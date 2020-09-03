@@ -14,6 +14,10 @@
             "defaultValue": "10.3",
             "type": "String"
         },
+        "vmssImageReference": {
+            "defaultValue": "null",
+            "type": "String"
+        },
         "virtualNetwork_name_base": {
             "defaultValue": "vnet",
             "type": "String"
@@ -29,13 +33,18 @@
         "applicationGateway_name_base": {
             "defaultValue": "ag",
             "type": "String"
+        },
+        "virtualMachineScaleSet_name_base": {
+            "defaultValue": "ss",
+            "type": "String"
         }
     },
     "variables": {
         "networkSecurityGroup_name": "[concat(parameters('networkSecurityGroup_name_base'), parameters('res_num'), '_', parameters('res_postfix'))]",
         "virtualNetwork_name": "[concat(parameters('virtualNetwork_name_base'), parameters('res_num'), '_', parameters('res_postfix'))]",
         "applicationGateway_name": "[concat(parameters('applicationGateway_name_base'), parameters('res_num'), '_', parameters('res_postfix'))]",
-        "publicIPAddresse_name": "[concat(parameters('publicIPAddresse_name_base'), '_', variables('applicationGateway_name'))]"
+        "publicIPAddresse_name": "[concat(parameters('publicIPAddresse_name_base'), '_', variables('applicationGateway_name'))]",
+        "virtualMachineScaleSet_name": "[concat(parameters('virtualMachineScaleSet_name_base'), parameters('res_num'), '_', parameters('res_postfix'))]"
     },
     "resources": [        
         {
@@ -219,6 +228,206 @@
                 "publicIPAllocationMethod": "Static",
                 "idleTimeoutInMinutes": 4,
                 "ipTags": []
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachineScaleSets",
+            "apiVersion": "2019-07-01",
+            "name": "[variables('virtualMachineScaleSet_name')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_B1ms",
+                "tier": "Standard",
+                "capacity": 2
+            },
+            "zones": [
+                "1",
+                "2",
+                "3"
+            ],
+            "properties": {
+                "singlePlacementGroup": false,
+                "upgradePolicy": {
+                    "mode": "Manual"
+                },
+                "virtualMachineProfile": {
+                    "storageProfile": {
+                        "osDisk": {
+                            "createOption": "FromImage",
+                            "caching": "ReadWrite",
+                            "managedDisk": {
+                                "storageAccountType": "Premium_LRS"
+                            }
+                        },
+                        "imageReference": {
+                            "id": "[parameters('vmssImageReference')]"
+                        }
+                    },
+                    "networkProfile": {
+                        "networkInterfaceConfigurations": [
+                            {
+                                "name": "ss03_25f3Nic",
+                                "properties": {
+                                    "primary": true,
+                                    "enableAcceleratedNetworking": false,
+                                    "dnsSettings": {
+                                        "dnsServers": []
+                                    },
+                                    "enableIPForwarding": false,
+                                    "ipConfigurations": [
+                                        {
+                                            "name": "ss03_25f3IPConfig",
+                                            "properties": {
+                                                "subnet": {
+                                                    "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_name')), '/subnets/ss_subnet')]"
+                                                },
+                                                "privateIPAddressVersion": "IPv4"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                "overprovision": true,
+                "doNotRunExtensionsOnOverprovisionedVMs": false,
+                "zoneBalance": false,
+                "platformFaultDomainCount": 1
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachineScaleSets/virtualMachines",
+            "apiVersion": "2019-07-01",
+            "name": "[concat(variables('virtualMachineScaleSet_name'), '/2')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('virtualMachineScaleSet_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_B1ms",
+                "tier": "Standard"
+            },
+            "zones": [
+                "3"
+            ],
+            "properties": {
+                "networkProfileConfiguration": {
+                    "networkInterfaceConfigurations": [
+                        {
+                            "name": "ss03_25f3Nic",
+                            "properties": {
+                                "primary": true,
+                                "enableAcceleratedNetworking": false,
+                                "dnsSettings": {
+                                    "dnsServers": []
+                                },
+                                "enableIPForwarding": false,
+                                "ipConfigurations": [
+                                    {
+                                        "name": "ss03_25f3IPConfig",
+                                        "properties": {
+                                            "subnet": {
+                                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_name')), '/subnets/ss_subnet')]"
+                                            },
+                                            "privateIPAddressVersion": "IPv4"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "hardwareProfile": {},
+                "storageProfile": {
+                    "imageReference": {
+                        "id": "[parameters('vmssImageReference')]"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        },
+                        "diskSizeGB": 30
+                    },
+                    "dataDisks": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[concat(resourceId('Microsoft.Compute/virtualMachineScaleSets/virtualMachines', variables('virtualMachineScaleSet_name'), '2'), '/networkInterfaces/ss03_25f3Nic')]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachineScaleSets/virtualMachines",
+            "apiVersion": "2019-07-01",
+            "name": "[concat(variables('virtualMachineScaleSet_name'), '/3')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('virtualMachineScaleSet_name'))]"
+            ],
+            "sku": {
+                "name": "Standard_B1ms",
+                "tier": "Standard"
+            },
+            "zones": [
+                "1"
+            ],
+            "properties": {
+                "networkProfileConfiguration": {
+                    "networkInterfaceConfigurations": [
+                        {
+                            "name": "ss03_25f3Nic",
+                            "properties": {
+                                "primary": true,
+                                "enableAcceleratedNetworking": false,
+                                "dnsSettings": {
+                                    "dnsServers": []
+                                },
+                                "enableIPForwarding": false,
+                                "ipConfigurations": [
+                                    {
+                                        "name": "ss03_25f3IPConfig",
+                                        "properties": {
+                                            "subnet": {
+                                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_name')), '/subnets/ss_subnet')]"
+                                            },
+                                            "privateIPAddressVersion": "IPv4"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "hardwareProfile": {},
+                "storageProfile": {
+                    "imageReference": {
+                        "id": "[parameters('vmssImageReference')]"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        },
+                        "diskSizeGB": 30
+                    },
+                    "dataDisks": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[concat(resourceId('Microsoft.Compute/virtualMachineScaleSets/virtualMachines', variables('virtualMachineScaleSet_name'), '3'), '/networkInterfaces/ss03_25f3Nic')]"
+                        }
+                    ]
+                }
             }
         }
     ]

@@ -10,6 +10,9 @@
         },
         "addr_prefix": {
             "value": "10.3"
+        },
+        "vmssImageReference": {
+            "value": "/subscriptions/41418fe7-80f5-4492-baab-123b3af45a7d/resourceGroups/autoscale/providers/Microsoft.Compute/galleries/notejam_gallery/images/notejam_vm/versions/1.0.0"
         }
     }
 }
