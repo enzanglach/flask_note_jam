@@ -235,6 +235,10 @@
             "apiVersion": "2019-07-01",
             "name": "[variables('virtualMachineScaleSet_name')]",
             "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetwork_name'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetwork_name'), 'ag_subnet')]"
+            ],
             "sku": {
                 "name": "Standard_B1ms",
                 "tier": "Standard",
