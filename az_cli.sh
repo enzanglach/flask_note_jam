@@ -42,7 +42,9 @@ SS=ss03_ne
 
 az group create --name $RG2 --location $LOC2
 
-az group deployment create --resource-group $RG2 --template-file ./azuredeploy.json --parameters ./azuredeploy.parameters.json
+az deployment group create --resource-group $RG2 \
+  --template-file /mnt/c/GitHub/flask_note_jam/arm_net_template.json \
+  --parameters /mnt/c/GitHub/flask_note_jam/arm_net_template.parameters.json
 
 az network vnet create -g $RG2 -n $VNET --address-prefix 10.3.0.0/16 --subnet-name ss_subnet --subnet-prefix 10.3.0.0/24
 

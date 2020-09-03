@@ -6,7 +6,7 @@
             "value": "03"
         },
         "res_postfix": {
-            "value": "_ne"
+            "value": "ne"
         },
         "addr_prefix": {
             "value": "10.3"

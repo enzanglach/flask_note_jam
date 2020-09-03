@@ -7,7 +7,7 @@
             "type": "String"
         },
         "res_postfix": {
-            "defaultValue": "_ne",
+            "defaultValue": "ne",
             "type": "String"
         },
         "addr_prefix": {
@@ -141,7 +141,7 @@
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
-                        "10.1.0.0/16"
+                        "[concat(parameters('addr_prefix'), '.0.0/16')]"
                     ]
                 },
                 "subnets": [
