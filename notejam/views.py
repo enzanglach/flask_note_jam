@@ -174,7 +174,7 @@ def get_ip():
 
 @app.route('/health.html')
 def health():
-    return f"Healthy :-) from {get_ip()}, version 3"
+    return f"Healthy :-) from {get_ip()}, version 4"
 
 
 @app.route('/signup/', methods=['GET', 'POST'])
