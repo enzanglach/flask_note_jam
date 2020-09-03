@@ -67,3 +67,19 @@ az vmss create \
    --load-balancer "" \
    --generate-ssh-keys
 
+#
+# Create solution with ARM template
+#
+
+# create RG in a selected region
+az group create --name $RG2 --location $LOC2
+
+# create NSG, VNET, PIP, VMSS and AG
+az deployment group create --resource-group $RG2 \
+  --template-file /mnt/c/GitHub/flask_note_jam/arm_net_template.json \
+  --parameters /mnt/c/GitHub/flask_note_jam/arm_net_template.parameters.json
+
+# 1. Manual step - edit AG backend poll and add VMSS as a target
+# 2. Manual step - upgrade VMSS instances
+# 3. Manual step - update DNS to point to a new PIP of AG
+# 4. Optional step - if not using currently this solution then deallocate VMSS to save money
