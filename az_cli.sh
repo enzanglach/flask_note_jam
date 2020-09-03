@@ -83,3 +83,4 @@ az deployment group create --resource-group $RG2 \
 # 2. Manual step - upgrade VMSS instances
 # 3. Manual step - update DNS to point to a new PIP of AG
 # 4. Optional step - if not using currently this solution then deallocate VMSS to save money
+# 5. Optional step - create VNET peering to another VNET with internet reachable VM to ensure connectivity
