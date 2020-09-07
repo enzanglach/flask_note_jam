@@ -88,16 +88,92 @@
       become_user: azureuser
 
     - name: Create python virtual environment
-      shell: "pip3 install virtualenv && ~/.local/bin/virtualenv venv"
+      shell: pip3 install virtualenv && ~/.local/bin/virtualenv venv
       args:
         chdir: /home/azureuser/flask_note_jam
         creates: /home/azureuser/flask_note_jam/venv
       become: yes
       become_user: azureuser
 
-    - name: Install python packages
-      shell: "source venv/bin/activate && pip install -r requirements.txt && pip install gunicorn && deactivate"
+    - name: Pull repository
+      shell: git pull
       args:
         chdir: /home/azureuser/flask_note_jam
       become: yes
       become_user: azureuser
+
+    - name: Make a script executable
+      file:
+        path: /home/azureuser/flask_note_jam/vmsetup/vmweb_notejam_setup.sh
+        mode: '0744'
+
+    - name: Install python packages
+      shell: vmsetup/vmweb_notejam_setup.sh
+      args:
+        chdir: /home/azureuser/flask_note_jam
+      become: yes
+      become_user: azureuser
+
+    - name: Install notejam.service
+      template:
+        src: vmweb_notejam.service
+        dest: /etc/systemd/system/notejam.service
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Create a notejam.service directory
+      file:
+        path: /etc/systemd/system/notejam.service.d
+        state: directory
+        mode: '0755'
+
+    #- name: Install notejam settings
+     # template:
+      #  src: settings.conf
+       # dest: /etc/systemd/system/notejam.service.d/settings.conf
+        #owner: root
+       # group: root
+       # mode: '0644'
+
+    - name: Force systemd to reread configs
+      systemd:
+        daemon_reload: yes
+
+    - name: Enable service notejam and ensure it is not masked
+      systemd:
+        name: notejam
+        enabled: yes
+        masked: no
+
+    - name: Make sure notejam service is running
+      systemd:
+        state: started
+        name: notejam
+
+    - name: Install nginx website config
+      template:
+        src: vmweb_notejam.nginx
+        dest: /etc/nginx/sites-available/notejam.nginx
+        owner: root
+        group: root
+        mode: '0644'
+      notify:
+      - restart nginx        
+
+    - name: Create web-site link 
+      file:
+        src: /etc/nginx/sites-available/notejam.nginx
+        dest: /etc/nginx/sites-enabled/notejam.nginx
+        owner: root
+        group: root
+        mode: '0777'
+        state: link
+      notify:
+      - restart nginx        
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted        
