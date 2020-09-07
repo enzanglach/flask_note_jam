@@ -1,0 +1,142 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualMachine_name": {
+            "defaultValue": "vmweb",
+            "type": "String",
+            "metadata": {
+                "description": "Name of the host."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        },
+        "virtualNetwork_name": {
+            "type": "string",
+            "defaultValue": null,
+            "metadata": {
+                "description": "Name of the VNET"
+            }
+        },
+        "subnet_name": {
+            "type": "string",
+            "defaultValue": null,
+            "metadata": {
+                "description": "Name of the subnet in the virtual network"
+            }
+        }
+    },
+    "variables": {
+        "publicIpAddress_name": "[concat(parameters('virtualMachine_name'), '_publicIP' )]",
+        "networkInterface_name": "[concat(parameters('virtualMachine_name'),'_netInt')]",
+        "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetwork_name'), parameters('subnet_name'))]",
+        "dnsLabelPrefix": "[toLower(concat(parameters('virtualMachine_name'), '-', uniqueString(resourceGroup().id)))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2019-02-01",
+            "name": "[variables('publicIpAddress_name')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "publicIpAllocationMethod": "Static",
+                "publicIPAddressVersion": "IPv4",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('dnsLabelPrefix')]"
+                },
+                "idleTimeoutInMinutes": 4
+            },
+            "sku": {
+                "name": "Basic",
+                "tier": "Regional"
+            }
+        },        
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2018-10-01",
+            "name": "[variables('networkInterface_name')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIpAddresses/', variables('publicIpAddress_name'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            },
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIpAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIpAddress_name'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2019-07-01",
+            "name": "[parameters('virtualMachine_name')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterface_name'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_B1ms"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "debian",
+                        "offer": "debian-10",
+                        "sku": "10",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "osType": "Linux",
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite"
+                    },
+                    "dataDisks": []
+                },
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachine_name')]",
+                    "adminUsername": "azureuser",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": {
+                            "publicKeys": [
+                                {
+                                    "path": "/home/azureuser/.ssh/authorized_keys",
+                                    "keyData": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDdzPiIL5GNlCAH6KHuYyAC4Cru\r\nUaqOezNcIAiAwhKc6w5D8vRUn+arAUm3FOZ/8lDo+nRsfrdXInugmRzPlbnp4V3n\r\nx4EgJApbMFsVHC9j82oBR0XvylHwQRAVIoVGUzOdpW4AaTbTt7LrRa1c7QHPwktk\r\nTBWtiu5sM8rUtQKUJi0hE4M8UTfC7kXwiTqBk2YFnV38m+arbiAsQnaS7FZDs9UA\r\nwXQ6R4CA16DoWjZkBabBGbsxZNm+3vit40jXpgBQYDQMEyohUlFy5M2ijDnmslBc\r\nz0qChiPs1izWagj6yE6WzEvtXg1kDsdAr7WNzsaj4UxEG2QfwxqKg7vLDbQYfnU4\r\nWX8MItFRtEztq2rK5yYSa/EQ14NgFNSg6wtJ9oMLo1uOPVS66TLvhobDazeB4+r3\r\n3vZorFTiISMuGTKwMhaj2mUQyduV8bxtj0V3oIpmWwkRP9/auBWuFEu3UHrhlMD9\r\nI3N3gQw8OQRcefk5HbJPpUnN99cR9N2REoHy/I0= generated-by-azure\r\n"
+                                }
+                            ]
+                        },
+                        "provisionVMAgent": true
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterface_name'))]"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "hostname": {
+            "type": "string",
+            "value": "[reference(variables('publicIpAddress_name')).dnsSettings.fqdn]"
+        }
+    }    
+}
