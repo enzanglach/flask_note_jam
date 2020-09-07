@@ -1,0 +1,103 @@
+---
+# Run with ansible-playbook <filename> -k
+#   (make sure to add the IPs of machines you want to manage to /etc/ansible/hosts first)
+
+- hosts: all
+  gather_facts: False
+  remote_user: azureuser
+  become: yes
+  become_user: root
+  become_method: sudo
+
+  tasks:
+    - name: Azureuser authorized_keys
+      authorized_key: user=azureuser
+                      exclusive=no
+                      key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    
+    - name: Root authorized_keys
+      authorized_key: user=root
+                      exclusive=no
+                      key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+    
+    - name: Install GPG package for adding apt signing key
+      apt:
+        pkg:
+        - gnupg
+
+    - name: Add a Microsoft apt signing key
+      apt_key:
+        url: https://packages.microsoft.com/keys/microsoft.asc
+        state: present
+
+    - name: Add a Microsoft repository
+      apt_repository:
+        # repo: deb [arch=amd64,armhf,arm64] https://packages.microsoft.com/ubuntu/20.04/prod focal main
+        repo: deb [arch=amd64] https://packages.microsoft.com/debian/10/prod buster main
+        state: present
+        
+    - name: Update and upgrade existing packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install new required packages
+      apt:
+        pkg:
+        - curl
+        - git
+        - python3-dev
+        - python3-pip
+        - build-essential
+        - libssl-dev
+        - libffi-dev
+        - python3-setuptools
+        - python3-venv
+        - nginx
+
+    - name: Install MS packages
+      apt:
+        pkg:
+        - msodbcsql17
+        - mssql-tools
+        - unixodbc-dev
+      environment:
+        ACCEPT_EULA: 'y'
+
+    - name: Remove old packages
+      apt:
+        pkg:
+        - python-minimal 
+        - python2
+        state: absent
+        autoremove: yes
+
+    - name: Create odbc.ini file
+      template:
+        src: "vmweb_odbc.ini"
+        dest: "/etc/odbc.ini"
+
+    - name: Check out the repo
+      git:
+        repo: 'https://github.com/enzanglach/flask_note_jam.git'
+        dest: /home/azureuser/flask_note_jam
+        version: vmimage
+        force: yes
+        update: yes
+      become: yes
+      become_user: azureuser
+
+    - name: Create python virtual environment
+      shell: "pip3 install virtualenv && ~/.local/bin/virtualenv venv"
+      args:
+        chdir: /home/azureuser/flask_note_jam
+        creates: /home/azureuser/flask_note_jam/venv
+      become: yes
+      become_user: azureuser
+
+    - name: Install python packages
+      shell: "source venv/bin/activate && pip install -r requirements.txt && pip install gunicorn && deactivate"
+      args:
+        chdir: /home/azureuser/flask_note_jam
+      become: yes
+      become_user: azureuser
