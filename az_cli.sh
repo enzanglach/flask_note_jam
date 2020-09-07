@@ -6,6 +6,24 @@ LOC1=westeurope
 LOC2=northeurope
 
 #
+# Create web vm instance, and an image from it
+#
+
+VMWEBRG=autoscale
+
+az deployment group create --resource-group $VMWEBRG \
+  --template-file /mnt/c/GitHub/flask_note_jam/arm_vmweb_template.json \
+  --parameters /mnt/c/GitHub/flask_note_jam/arm_vmweb_template.parameters.json
+
+az sig image-version create \
+   --resource-group $RG1 \
+   --gallery-name notejam_gallery \
+   --gallery-image-definition notejam_vm \
+   --gallery-image-version 2.0.0 \
+   --target-regions "westeurope=1" "northeurope=1" "uksouth=1" \
+   --managed-image "/subscriptions/41418fe7-80f5-4492-baab-123b3af45a7d/resourceGroups/autoscale/providers/Microsoft.Compute/virtualMachines/vmweb"
+
+#
 # Create image gallery and add image from vm3buster vm
 #
 
