@@ -1,3 +1,4 @@
+import socket
 from datetime import date
 from hashlib import md5
 
@@ -6,8 +7,8 @@ from flask_login import login_user, login_required, logout_user, current_user
 from flask_mail import Message
 
 from notejam import app, db, login_manager, mail
-from notejam.models import User, Note, Pad
 from notejam.forms import SigninForm, SignupForm, NoteForm, PadForm, DeleteForm, ChangePasswordForm, ForgotPasswordForm
+from notejam.models import User, Note, Pad
 
 
 @login_manager.user_loader
@@ -158,9 +159,22 @@ def signout():
     return redirect(url_for('signin'))
 
 
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+
 @app.route('/health.html')
 def health():
-    return "Healthy :-)"
+    return f"Healthy :-) from {get_ip()}, version 4"
 
 
 @app.route('/signup/', methods=['GET', 'POST'])
@@ -248,7 +262,7 @@ def _get_user_object_or_404(model, object_id, user, code=404):
 
 
 def _get_order_by(param='-updated_at'):
-    ''' get model order param by string description '''
+    """ get model order param by string description """
     return {
         'name': Note.name.asc(),
         '-name': Note.name.desc(),
@@ -258,7 +272,7 @@ def _get_order_by(param='-updated_at'):
 
 
 def _generate_password(user):
-    ''' generate new user password '''
+    """ generate new user password """
     m = md5.new()
     m.update(
         "{email}{secret}{date}".format(

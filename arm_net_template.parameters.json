@@ -1,0 +1,18 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "res_num": {
+            "value": "05"
+        },
+        "res_postfix": {
+            "value": "uks"
+        },
+        "addr_prefix": {
+            "value": "10.5"
+        },
+        "vmssImageReference": {
+            "value": "/subscriptions/41418fe7-80f5-4492-baab-123b3af45a7d/resourceGroups/autoscale/providers/Microsoft.Compute/galleries/notejam_gallery/images/notejam_vm/versions/1.0.0"
+        }
+    }
+}
