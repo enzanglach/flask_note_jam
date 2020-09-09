@@ -3,12 +3,12 @@ Description=Gunicorn instance to serve NoteJam
 After=network.target
 
 [Service]
-User=azureuser
-Group=azureuser
-WorkingDirectory=/home/azureuser/flask_note_jam
-Environment="PATH=/home/azureuser/flask_note_jam/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/mssql-tools/bin"
+User={{ nj_app_user }}
+Group={{ nj_app_user }}
+WorkingDirectory={{ nj_app_dir }}
+Environment="PATH={{ nj_app_dir }}/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/mssql-tools/bin"
 ExecStartPre=/usr/bin/git pull
-ExecStart=/home/azureuser/flask_note_jam/venv/bin/gunicorn --workers 3 --bind unix:notejam.sock -m 000 wsgi:app
+ExecStart={{ nj_app_dir }}/venv/bin/gunicorn --workers 3 --bind unix:notejam.sock -m 000 wsgi:app
 
 [Install]
 WantedBy=multi-user.target

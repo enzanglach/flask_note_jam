@@ -12,7 +12,8 @@
     nj_git_repo: https://github.com/enzanglach/flask_note_jam.git
     nj_git_version: master
     nj_app_dir: "/home/{{ nj_app_user }}/flask_note_jam"
-  #include_vars: vmweb_vars.yml
+    nj_db_user: notejam_login
+    nj_db_password: your_db_user_password_enter_using_command_line
   remote_user: "{{ nj_connect_user }}"
   become: yes
   become_user: root
@@ -97,26 +98,30 @@
         update: yes
       become: yes
       become_user: "{{ nj_app_user }}"
+      notify:
+      - restart notejam
 
-    - name: Create python virtual environment
-      shell: pip3 install virtualenv && ~/.local/bin/virtualenv venv
-      args:
-        chdir: "{{ nj_app_dir }}"
-        creates: "{{ nj_app_dir }}/venv"
+    - name: Install python virtualenv package
+      pip:
+        name: virtualenv
+
+    - name: Install python virtual environment and packages 
+      pip:
+        requirements: "{{ nj_app_dir }}/requirements.txt"
+        virtualenv: "{{ nj_app_dir }}/venv"
       become: yes
       become_user: "{{ nj_app_user }}"
+      notify:
+      - restart notejam
 
-    - name: Make a script executable
-      file:
-        path: "{{ nj_app_dir }}/vmsetup/vmweb_notejam_setup.sh"
-        mode: '0744'
-
-    - name: Install python packages
-      shell: vmsetup/vmweb_notejam_setup.sh
-      args:
-        chdir: "{{ nj_app_dir }}"
+    - name: Install python gunicorn package
+      pip:
+        name: gunicorn
+        virtualenv: "{{ nj_app_dir }}/venv"
       become: yes
       become_user: "{{ nj_app_user }}"
+      notify:
+      - restart notejam
 
     - name: Install notejam.service
       template:
@@ -130,32 +135,29 @@
       file:
         path: /etc/systemd/system/notejam.service.d
         state: directory
+        owner: root
+        group: root
         mode: '0755'
 
-    #- name: Install notejam settings
-     # template:
-      #  src: settings.conf
-       # dest: /etc/systemd/system/notejam.service.d/settings.conf
-        #owner: root
-       # group: root
-       # mode: '0644'
+    - name: Install notejam settings
+      template:
+        src: settings.conf
+        dest: /etc/systemd/system/notejam.service.d/settings.conf
+        owner: root
+        group: root
+        mode: '0600'
+      notify:
+      - restart notejam
 
-    - name: Force systemd to reread configs
+    - name: Enable service notejam and start it
       systemd:
         daemon_reload: yes
-
-    - name: Enable service notejam and ensure it is not masked
-      systemd:
         name: notejam
         enabled: yes
         masked: no
-
-    - name: Make sure notejam service is running
-      systemd:
         state: started
-        name: notejam
 
-    - name: Install nginx website config
+    - name: Install nginx notejam website config
       template:
         src: vmweb_notejam.nginx
         dest: /etc/nginx/sites-available/notejam.nginx
@@ -165,18 +167,28 @@
       notify:
       - restart nginx        
 
-    - name: Create web-site link 
+    - name: Enable notejam web-site using link 
       file:
         src: /etc/nginx/sites-available/notejam.nginx
         dest: /etc/nginx/sites-enabled/notejam.nginx
         owner: root
         group: root
-        mode: '0777'
         state: link
       notify:
       - restart nginx        
 
+    - name: Disable default web-site removing link 
+      file:
+        dest: /etc/nginx/sites-enabled/default
+        state: absent
+      notify:
+      - restart nginx        
+
   handlers:
+    - name: restart notejam
+      service:
+        name: notejam
+        state: restarted        
     - name: restart nginx
       service:
         name: nginx

@@ -1,9 +1,10 @@
 server {
-    listen 80;
-    server_name notejam.szuber.net;
+	listen 80 default_server;
+	listen [::]:80 default_server;
+    server_name _;
 
     location / {
         include proxy_params;
-        proxy_pass http://unix:/home/azureuser/flask_note_jam/notejam.sock;
+        proxy_pass http://unix:{{ nj_app_dir }}/notejam.sock;
     }
 }
