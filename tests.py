@@ -1,7 +1,7 @@
 import os
 import tempfile
 import unittest
-import urllib
+import urllib.parse
 
 from contextlib import contextmanager
 
@@ -160,7 +160,7 @@ class PadTestCase(NotejamBaseTestCase):
         self.assertRedirects(
             response,
             "{signin}?next={redirect_to}".format(
-                signin=url_for('signin'), redirect_to=urllib.quote(
+                signin=url_for('signin'), redirect_to=urllib.parse.quote(
                     url_for('create_pad'), ''))
         )
 
@@ -256,7 +256,7 @@ class NoteTestCase(NotejamBaseTestCase):
         self.assertRedirects(
             response,
             "{signin}?next={redirect_to}".format(
-                signin=url_for('signin'), redirect_to=urllib.quote(
+                signin=url_for('signin'), redirect_to=urllib.parse.quote(
                     url_for('create_note'), ''))
         )
 
@@ -319,18 +319,19 @@ class NoteTestCase(NotejamBaseTestCase):
 
 @contextmanager
 def signed_in_user(user):
-    '''
+    """
     Signed in user context
     Usage:
         user = get_user()
         with signed_in_user(user) as c:
             response = c.get(...)
-    '''
+    """
     with app.test_client() as c:
         with c.session_transaction() as sess:
             sess['user_id'] = user.id
             sess['_fresh'] = True
         yield c
+
 
 if __name__ == '__main__':
     unittest.main()
