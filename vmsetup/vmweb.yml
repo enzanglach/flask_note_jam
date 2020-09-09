@@ -3,15 +3,24 @@
 #   (make sure to add the IPs of machines you want to manage to /etc/ansible/hosts first)
 
 - hosts: all
-  gather_facts: False
-  remote_user: azureuser
+  vars:
+    nj_connect_user: azureuser
+    nj_app_user: azureuser
+    nj_ms_repo: deb [arch=amd64] https://packages.microsoft.com/debian/10/prod buster main
+    nj_odbc_server_name: sqlserver01pyapp.database.windows.net
+    nj_odbc_database: notejamdb01
+    nj_git_repo: https://github.com/enzanglach/flask_note_jam.git
+    nj_git_version: master
+    nj_app_dir: "/home/{{ nj_app_user }}/flask_note_jam"
+  #include_vars: vmweb_vars.yml
+  remote_user: "{{ nj_connect_user }}"
   become: yes
   become_user: root
   become_method: sudo
 
   tasks:
-    - name: Azureuser authorized_keys
-      authorized_key: user=azureuser
+    - name: "{{ nj_connect_user }} authorized_keys"
+      authorized_key: user={{ nj_connect_user }}
                       exclusive=no
                       key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
     
@@ -21,9 +30,9 @@
                       key="{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
     
     - name: Install GPG package for adding apt signing key
-      apt:
-        pkg:
-        - gnupg
+      package:
+        name: gnupg
+        state: present
 
     - name: Add a Microsoft apt signing key
       apt_key:
@@ -32,8 +41,7 @@
 
     - name: Add a Microsoft repository
       apt_repository:
-        # repo: deb [arch=amd64,armhf,arm64] https://packages.microsoft.com/ubuntu/20.04/prod focal main
-        repo: deb [arch=amd64] https://packages.microsoft.com/debian/10/prod buster main
+        repo: "{{ nj_ms_repo }}"
         state: present
         
     - name: Update and upgrade existing packages
@@ -42,8 +50,8 @@
         upgrade: dist
 
     - name: Install new required packages
-      apt:
-        pkg:
+      package:
+        name:
         - curl
         - git
         - python3-dev
@@ -54,10 +62,11 @@
         - python3-setuptools
         - python3-venv
         - nginx
+        state: latest
 
     - name: Install MS packages
-      apt:
-        pkg:
+      package:
+        name:
         - msodbcsql17
         - mssql-tools
         - unixodbc-dev
@@ -76,43 +85,38 @@
       template:
         src: "vmweb_odbc.ini"
         dest: "/etc/odbc.ini"
+        owner: root
+        group: root
+        mode: '0644'
 
     - name: Check out the repo
       git:
-        repo: 'https://github.com/enzanglach/flask_note_jam.git'
-        dest: /home/azureuser/flask_note_jam
-        version: vmimage
-        force: yes
+        repo: "{{ nj_git_repo }}"
+        dest: "{{ nj_app_dir }}"
+        version: "{{ nj_git_version }}"
         update: yes
       become: yes
-      become_user: azureuser
+      become_user: "{{ nj_app_user }}"
 
     - name: Create python virtual environment
       shell: pip3 install virtualenv && ~/.local/bin/virtualenv venv
       args:
-        chdir: /home/azureuser/flask_note_jam
-        creates: /home/azureuser/flask_note_jam/venv
+        chdir: "{{ nj_app_dir }}"
+        creates: "{{ nj_app_dir }}/venv"
       become: yes
-      become_user: azureuser
-
-    - name: Pull repository
-      shell: git pull
-      args:
-        chdir: /home/azureuser/flask_note_jam
-      become: yes
-      become_user: azureuser
+      become_user: "{{ nj_app_user }}"
 
     - name: Make a script executable
       file:
-        path: /home/azureuser/flask_note_jam/vmsetup/vmweb_notejam_setup.sh
+        path: "{{ nj_app_dir }}/vmsetup/vmweb_notejam_setup.sh"
         mode: '0744'
 
     - name: Install python packages
       shell: vmsetup/vmweb_notejam_setup.sh
       args:
-        chdir: /home/azureuser/flask_note_jam
+        chdir: "{{ nj_app_dir }}"
       become: yes
-      become_user: azureuser
+      become_user: "{{ nj_app_user }}"
 
     - name: Install notejam.service
       template:
