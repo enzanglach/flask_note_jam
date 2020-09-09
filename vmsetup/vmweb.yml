@@ -84,8 +84,8 @@
 
     - name: Create odbc.ini file
       template:
-        src: "vmweb_odbc.ini"
-        dest: "/etc/odbc.ini"
+        src: templates/odbc.ini
+        dest: /etc/odbc.ini
         owner: root
         group: root
         mode: '0644'
@@ -125,7 +125,7 @@
 
     - name: Install notejam.service
       template:
-        src: vmweb_notejam.service
+        src: templates/notejam.service
         dest: /etc/systemd/system/notejam.service
         owner: root
         group: root
@@ -141,7 +141,7 @@
 
     - name: Install notejam settings
       template:
-        src: settings.conf
+        src: templates/settings.conf
         dest: /etc/systemd/system/notejam.service.d/settings.conf
         owner: root
         group: root
@@ -159,7 +159,7 @@
 
     - name: Install nginx notejam website config
       template:
-        src: vmweb_notejam.nginx
+        src: templates/notejam.nginx
         dest: /etc/nginx/sites-available/notejam.nginx
         owner: root
         group: root
